@@ -280,9 +280,9 @@ export class DatePicker implements OnInit, ControlValueAccessor {
         }
       }
       else {
-        const { preserveTimeValue } = this.defaultSettings;
+        const { preserveTimeValue, incrementByMinutes } = this.defaultSettings;
         if (preserveTimeValue) {
-          let selectedMoment = moment(`${this.hourValue}: ${this.minValue} ${this.timeViewMeridian}`, 'hh: mm a')
+          let selectedMoment = moment(`${moment(selectedDay).format('MM DD YYYY')} ${this.hourValue}: ${this.minValue} ${this.timeViewMeridian}`, 'MM DD YYYY hh: mm a');
           let dateToSet = new Date(selectedDay);
           dateToSet.setHours(+selectedMoment.format('HH'));
           dateToSet.setMinutes(+selectedMoment.format('mm'));
@@ -291,12 +291,23 @@ export class DatePicker implements OnInit, ControlValueAccessor {
           this.date = new Date(selectedDay);
         }
 
+        let selectedMoment = moment(`${moment(selectedDay).format('MM DD YYYY')} ${this.hourValue}: ${this.minValue} ${this.timeViewMeridian}`, 'MM DD YYYY hh: mm a');
+        let diff = selectedMoment.diff(moment(new Date()), 'minutes');
+        if (diff <= 0 ) {
+          let today = new Date();
+          let currentMinutes = today.getMinutes();
+          if (incrementByMinutes) today.setMinutes(currentMinutes + incrementByMinutes);
+          this.date = new Date(today);
+        }
+
         this.onChangeCallback(this.date.toString());
       }
       if (this.settings.closeOnSelect) {
         this.popover = false;
         this.onDateSelect.emit(this.date);
       }
+
+      this.timeView = true;
     }
   }
   setStartDate(selectedDate: Date) {
@@ -500,11 +511,13 @@ export class DatePicker implements OnInit, ControlValueAccessor {
 
 
   changeInputHour() {
-    let is12HFormat = this.settings.format.slice(-1)  === 'a' ? true : false;
-    if (is12HFormat && (this.hourValue > 12 || this.hourValue < 0)) {
-      this.hourValue = +moment(new Date()).format("hh");
-    }
-    if (this.isBehindFromCurrentTime()) this.setCurrectTime();
+    console.log(this.hourValue);
+    if (this.hourValue < 0) this.setCurrectTime();
+    // let is12HFormat = this.settings.format.slice(-1)  === 'a' ? true : false;
+    // if (is12HFormat && (this.hourValue > 12 || this.hourValue < 0)) {
+    //   this.hourValue = +moment(new Date()).format("hh");
+    // }
+    // if (this.isBehindFromCurrentTime()) this.setCurrectTime();
   }
 
   changeInputMinute() {
@@ -523,8 +536,12 @@ export class DatePicker implements OnInit, ControlValueAccessor {
   }
 
   setCurrectTime(meridianValue?: string) {
-    this.hourValue = +moment(new Date()).format("hh");
-    this.minValue = +moment(new Date()).format("mm");
+    const { incrementByMinutes } = this.settings;
+    let today = new Date();
+    let currentMinutes = today.getMinutes();
+    if (incrementByMinutes) today.setMinutes(currentMinutes + incrementByMinutes);
+    this.hourValue = +moment(today).format("hh");
+    this.minValue = +moment(today).format("mm");
     if (meridianValue) this.timeViewMeridian = meridianValue == 'AM' ? 'PM' : 'AM'
   }
 }
