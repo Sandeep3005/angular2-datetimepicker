@@ -188,7 +188,7 @@ export class DatePicker implements OnInit, ControlValueAccessor {
           }
           day++;
         }
-        dateRow.push({ day: dateCell, date: new Date((month + 1) + '-' + dateCell + '-' + date.getFullYear()) });
+        dateRow.push({ day: dateCell, date: new Date((month + 1) + '/' + dateCell + '/' + date.getFullYear()) });
       }
       // stop making rows if we've run out of days
       if (day > monthLength) {
@@ -199,7 +199,6 @@ export class DatePicker implements OnInit, ControlValueAccessor {
       }
     }
     return dateArr;
-
   }
   generateYearList(param: string) {
     this.clickedToChangeYear = true;
@@ -461,7 +460,7 @@ export class DatePicker implements OnInit, ControlValueAccessor {
     this.popover = false;
   }
   composeDate(date: Date) {
-    return (date.getMonth() + 1) + '-' + date.getDate() + '-' + date.getFullYear();
+    return (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
   }
   getCurrentWeek() {
     var curr_date = new Date();
