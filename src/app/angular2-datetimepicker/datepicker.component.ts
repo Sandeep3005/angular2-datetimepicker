@@ -26,6 +26,9 @@ export class DatePicker implements OnInit, ControlValueAccessor {
   @Output()
   onDateSelect: EventEmitter<Date> = new EventEmitter<Date>();
 
+  @Input()
+  timezone: string;
+
   selectedDate: String;
   date: Date;
   dateRange: DateRange = new DateRange();
@@ -107,7 +110,7 @@ export class DatePicker implements OnInit, ControlValueAccessor {
 
     }
     else {
-      this.date = new Date();
+      this.date = this.getCurrentDateWithTimezone();
     }
   }
   registerOnChange(fn: any) {
@@ -296,9 +299,9 @@ export class DatePicker implements OnInit, ControlValueAccessor {
         }
 
         let selectedMoment = moment(`${moment(selectedDay).format('MM DD YYYY')} ${this.hourValue}: ${this.minValue} ${this.timeViewMeridian}`, 'MM DD YYYY hh: mm a');
-        let diff = selectedMoment.diff(moment(new Date()), 'minutes');
+        let diff = selectedMoment.diff(moment(this.getCurrentDateWithTimezone()), 'minutes');
         if (diff <= 0 ) {
-          let today = new Date();
+          let today = this.getCurrentDateWithTimezone();
           let currentMinutes = today.getMinutes();
           if (incrementByMinutes) today.setMinutes(currentMinutes + incrementByMinutes);
           this.date = new Date(today);
@@ -358,7 +361,7 @@ export class DatePicker implements OnInit, ControlValueAccessor {
     if (isNaN(selectedYear)) return;
     this.date = new Date(this.date.setFullYear(selectedYear));
     let isBackDate  = this.isBackDateViaMinutes({ date: this.date });
-    this.date = !isBackDate ? new Date(this.date) : new Date();
+    this.date = !isBackDate ? new Date(this.date) : this.getCurrentDateWithTimezone();
 
     this.yearView = !this.yearView;
     this.monthDays = this.generateDays(this.date);
@@ -387,7 +390,7 @@ export class DatePicker implements OnInit, ControlValueAccessor {
       originalDate.setMonth(originalDate.getMonth() - 1);
     }
     let isBackDate  = this.isBackDateViaMinutes({ date: originalDate });
-    this.date = !isBackDate ? new Date(originalDate) : new Date();
+    this.date = !isBackDate ? new Date(originalDate) : this.getCurrentDateWithTimezone();
     this.monthDays = this.generateDays(this.date);
   }
   nextMonth(e?: any) {
@@ -510,7 +513,6 @@ export class DatePicker implements OnInit, ControlValueAccessor {
     const minDateMoment = moment(minDate);
     const lowerLimitDate = moment(day.date);
     return (minDateMoment.diff(lowerLimitDate, "minutes") > 0) ? true : false;
-    
   }
 
   isBackYear(year) {
@@ -542,13 +544,13 @@ export class DatePicker implements OnInit, ControlValueAccessor {
     const { clockHour } = this.settings;
     if (this.hourValue < 0) return this.setCurrectTime();
     let is12HFormat = clockHour  === 12 ? true : false;
-    if (is12HFormat && (this.hourValue > 12)) this.setCurrectTime();
+    if (is12HFormat && (this.hourValue > 12)) return this.setCurrectTime();
     if (this.isBehindFromCurrentTime()) this.setCurrectTime();
   }
 
   changeInputMinute() {
     if ((this.minValue > 59) || (this.minValue < 0)) {
-      this.minValue = +moment(new Date()).format("mm");
+      this.minValue = +moment(this.getCurrentDateWithTimezone()).format("mm");
     }
     if (this.isBehindFromCurrentTime()) this.setCurrectTime();
   }
@@ -556,18 +558,24 @@ export class DatePicker implements OnInit, ControlValueAccessor {
   isBehindFromCurrentTime() {
     let dateSelected = moment(this.date).format('DD-MM-YYYY');
     let selectedMoment = moment(`${dateSelected} ${this.hourValue}: ${this.minValue} ${this.timeViewMeridian}`, 'DD-MM-YYYY hh: mm a')
-    let currMoment = moment(new Date());
+    let currMoment = moment(this.getCurrentDateWithTimezone());
     let behindFromCurrentTime = currMoment.diff(selectedMoment, "seconds");
     return (behindFromCurrentTime >  0) ? true : false;
   }
 
   setCurrectTime(meridianValue?: string) {
     const { incrementByMinutes } = this.settings;
-    let today = new Date();
+    let today = this.getCurrentDateWithTimezone();
     let currentMinutes = today.getMinutes();
     if (incrementByMinutes) today.setMinutes(currentMinutes + incrementByMinutes);
     this.hourValue = +moment(today).format("hh");
     this.minValue = +moment(today).format("mm");
     if (meridianValue) this.timeViewMeridian = meridianValue == 'AM' ? 'PM' : 'AM'
+  }
+
+  getCurrentDateWithTimezone() {
+    let offset: any = this.timezone.replace(":3", ".5").replace(":00", "").substring(3);
+    let currDate: any = new Date(new Date().getTime() + offset * 3600 * 1000).toUTCString().replace( / GMT$/, "" );
+    return new Date(currDate);
   }
 }
